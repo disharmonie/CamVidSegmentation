@@ -1,0 +1,18 @@
+services:
+  camvid-segmentation:
+    build: .
+    tty: true
+    stdin_open: true
+    container_name: camvid-segmentation
+    volumes:
+      - .:/workspace
+    ports:
+      - "8888:8888"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    shm_size: '8gb'
