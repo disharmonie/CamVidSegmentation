@@ -3,20 +3,24 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-# 1. Wir importieren unsere eigenen Bausteine aus den anderen Dateien!
 from model import UNet
 from dataset import CamVidDataset
 
 def main():
-    # 2. Hardware prüfen
+    # 1. Hardware prüfen
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Training auf: {device}")
 
-    # 3. Den Dataloader aufbauen (wie eben besprochen)
+    # 2. Den Dataloader aufbauen
     train_dataset = CamVidDataset(image_dir="data/CamVid/train/images", 
                                   mask_dir="data/CamVid/train/masks")
     
     train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers=2)
+
+    # 3. Den Validierungs-Datensatz laden
+    val_dataset = CamVidDataset(image_dir="data/CamVid/val/images", 
+                                mask_dir="data/CamVid/val/masks")
+    val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False, num_workers=2)
 
     # 4. Das Modell aufbauen
     model = UNet(in_channels=3, out_channels=32).to(device)
@@ -43,7 +47,5 @@ def main():
             
         print(f"Epoche {epoch+1}/{epochs} - Fehler: {running_loss/len(train_loader):.4f}")
 
-# Dieser kleine Block sorgt dafür, dass main() nur ausgeführt wird, 
-# wenn du 'python train.py' aufrufst.
 if __name__ == "__main__":
     main()
