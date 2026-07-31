@@ -1,10 +1,10 @@
+import torch
 import torch.nn as nn
 
 class DoubleConv(nn.Module):
-    \"\"\"
-    Ein wiederverwendbarer Block: Zwei Faltungsschichten (Convolutions) hintereinander.
-    Jede Faltung wird von einer Batch-Normalisierung und einer ReLU-Aktivierung gefolgt.
-    \"\"\"
+
+    # Ein wiederverwendbarer Block: Zwei Faltungsschichten (Convolutions) hintereinander. Jede Faltung wird von einer Batch-Normalisierung und einer ReLU-Aktivierung gefolgt.
+       
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.conv = nn.Sequential(
