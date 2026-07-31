@@ -1,4 +1,7 @@
-data
-__pycache__
-.gitignore
-.vscode
+__pycache__/
+
+.gitignore/
+.vscode/
+
+data/
+notebooks/

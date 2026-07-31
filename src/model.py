@@ -85,4 +85,3 @@ class UNet(nn.Module):
         # 4. OUTPUT
         out = self.out_conv(dec3)
         return out
-""")

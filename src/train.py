@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from src.model import UNet
 from src.dataset import CamVidDataset
@@ -12,15 +13,15 @@ def main():
     print(f"Training auf: {device}")
 
     # 2. Den Dataloader aufbauen
-    train_dataset = CamVidDataset(image_dir="data/CamVid/train/images", 
-                                  mask_dir="data/CamVid/train/masks")
+    train_dataset = CamVidDataset(images_dir="data/train", 
+                                  masks_dir="data/train_labels")
     
-    train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers=2)
+    train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers=0)
 
     # 3. Den Validierungs-Datensatz laden
-    val_dataset = CamVidDataset(image_dir="data/CamVid/val/images", 
-                                mask_dir="data/CamVid/val/masks")
-    val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False, num_workers=2)
+    val_dataset = CamVidDataset(images_dir="data/val", 
+                                masks_dir="data/val_labels")
+    val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False, num_workers=0)
 
     # 4. Das Modell aufbauen
     model = UNet(in_channels=3, out_channels=32).to(device)
@@ -36,6 +37,8 @@ def main():
         # --- TRAINING ---
         model.train()
         train_loss = 0.0
+
+        train_loop = tqdm(train_loader, desc=f"Epoche [{epoch+1}/{epochs}] Train")
         
         for images, masks in train_loader:
             images = images.to(device)
@@ -48,6 +51,8 @@ def main():
             optimizer.step()
             
             train_loss += loss.item()
+
+            train_loop.set_postfix(loss=loss.item())
 
         avg_train_loss = train_loss / len(train_loader)
 

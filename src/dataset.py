@@ -27,8 +27,10 @@ class CamVidDataset(Dataset):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         # Konvertiere Label von BGR zu Graustufen
-        mask = cv2.imread(mask_path)
-        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+        mask = cv2.imread(mask_path, 0)
+        # mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+
+        mask[(mask >= 32) & (mask != 255)] = 0
 
         # In Tensoren umwandeln, Format umwandeln (Height, Width, Channels) -> (Channels, Height, Width)
         image = torch.tensor(image, dtype=torch.float32).permute(2, 0, 1) / 255.0
