@@ -1,1 +1,19 @@
-'CamVid-Segmentation' is a project/repository for a university course. It includes a U-Net model that processes and semantically segments images of streets.
+readme_content = """# U-Net Semantische Bildsegmentierung (CamVid)
+
+Ein sauberes und modulares PyTorch-Projekt zur semantischen Bildsegmentierung unter Verwendung einer U-Net-Architektur, trainiert auf dem CamVid-Dataset.
+
+## 📂 Projektstruktur
+
+```text
+├── data/
+│   ├── train/          # Trainingsbilder
+│   ├── train_labels/   # Zugehörige Segmentierungsmasken (Train)
+│   ├── val/            # Validierungsbilder
+│   └── val_labels/     # Zugehörige Segmentierungsmasken (Val)
+├── checkpoints/        # Speicherort für trainierte Modellgewichte (.pth)
+├── src/
+│   ├── model.py        # U-Net Architektur & Bausteine (DoubleConv)
+│   └── dataset.py      # CamVid-Dataset-Klasse & Farb-Mapping
+├── train.py            # Hauptskript zum Trainieren des Modells
+├── predict.py          # Inferenz-Skript zum Generieren von Vorhersagen
+└── README.md
