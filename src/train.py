@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -7,28 +8,40 @@ from tqdm import tqdm
 from src.model import UNet
 from src.dataset import CamVidDataset
 
-def main():
-    # 1. Hardware prüfen
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print(f"Training auf: {device}")
+class AverageMeter:
+    def __init__(self):
+        self.reset()
 
-    # 2. Den Dataloader aufbauen
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+def main():
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Training auf: {device}\n" + "-"*50)
+
+    os.makedirs("checkpoints", exist_ok=True)
+
     train_dataset = CamVidDataset(images_dir="data/train", 
                                   masks_dir="data/train_labels")
-    
     train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers=0)
 
-    # 3. Den Validierungs-Datensatz laden
     val_dataset = CamVidDataset(images_dir="data/val", 
                                 masks_dir="data/val_labels")
     val_loader = DataLoader(val_dataset, batch_size=4, shuffle=False, num_workers=0)
 
-    # 4. Das Modell aufbauen
     model = UNet(in_channels=3, out_channels=32).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-    # 5. Die Trainingsschleife
     epochs = 50
     best_val_loss = float('inf')
 
@@ -36,11 +49,11 @@ def main():
 
         # --- TRAINING ---
         model.train()
-        train_loss = 0.0
-
-        train_loop = tqdm(train_loader, desc=f"Epoche [{epoch+1}/{epochs}] Train")
+        train_losses = AverageMeter()
         
-        for images, masks in train_loader:
+        train_loop = tqdm(train_loader, desc=f"Epoche [{epoch+1:02d}/{epochs}] Train", leave=False)
+        
+        for images, masks in train_loop:
             images = images.to(device)
             masks = masks.to(device, dtype=torch.long)
             
@@ -50,42 +63,39 @@ def main():
             loss.backward()
             optimizer.step()
             
-            train_loss += loss.item()
+            train_losses.update(loss.item(), images.size(0))
+            train_loop.set_postfix(loss=f"{train_losses.val:.4f}", avg=f"{train_losses.avg:.4f}")
 
-            train_loop.set_postfix(loss=loss.item())
-
-        avg_train_loss = train_loss / len(train_loader)
 
         # --- VALIDIERUNG ---
         model.eval()
-        val_loss = 0.0
+        val_losses = AverageMeter()
 
+        val_loop = tqdm(val_loader, desc=f"Epoche [{epoch+1:02d}/{epochs}] Val  ", leave=False)
+        
         with torch.no_grad():
-            for images, masks in val_loader:
+            for images, masks in val_loop:
                 images = images.to(device)
                 masks = masks.to(device, dtype=torch.long)
 
                 outputs = model(images)
                 loss = criterion(outputs, masks)
-                val_loss += loss.item()
-
-        avg_val_loss = val_loss / len(val_loader)
-
-        print(f"Epoche {epoch+1}/{epochs} - Loss: {avg_train_loss:.4f} - Val-Loss: {avg_val_loss:.4f}")
+                
+                val_losses.update(loss.item(), images.size(0))
+                val_loop.set_postfix(loss=f"{val_losses.val:.4f}", avg=f"{val_losses.avg:.4f}")
 
 
-        # --- Checkpoint speichern ---
-        if avg_val_loss < best_val_loss:
-            best_val_loss = avg_val_loss
+        # --- CHECKPOINT & TERMINAL AUSGABE ---
+        save_msg = ""
+        if val_losses.avg < best_val_loss:
+            best_val_loss = val_losses.avg
             checkpoint_pfad = "checkpoints/best_model.pth"
             torch.save(model.state_dict(), checkpoint_pfad)
-            print("Best model saved!")
+            save_msg = " --> [Neues bestes Modell gespeichert!]"
 
-        # Zum Laden:
-        # geladenes_modell = UNet(in_channels=3, out_channels=32)
-        # geladenes_modell.load_state_dict(torch.load("experiments/checkpoints/best_model.pth"))
-        # geladenes_modell.eval() # Direkt in den Prüfungsmodus versetzen!
+        print(f"Epoche {epoch+1:02d}/{epochs} | Train Loss: {train_losses.avg:.4f} | Val-Loss: {val_losses.avg:.4f}{save_msg}")
 
+    print("Training finished!")
 
 if __name__ == "__main__":
     main()
