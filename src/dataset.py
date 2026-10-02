@@ -40,7 +40,6 @@ CAMVID_COLORS = {
     (64, 192, 0): 31,  # Wall
 }
 
-
 class CamVidDataset(Dataset):
     """PyTorch Dataset für das Laden und Vorverarbeiten von CamVid-Bildern und
 
